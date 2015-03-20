@@ -1,1 +1,2 @@
 gcc dct.cpp -lm -lgsl -lgslcblas -o dct
+sudo apt-get install libgsl0-dev
