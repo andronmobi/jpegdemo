@@ -1,0 +1,1 @@
+gcc dct.cpp -lm -lgsl -lgslcblas -o dct
