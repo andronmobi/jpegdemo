@@ -10,6 +10,9 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
 
+#define CONSTA
+
+#ifdef CONSTA
 static const float A[] = {
     51, 52, 51, 50, 50, 52, 50, 52,
     51, 52, 51, 51, 50, 52, 52, 51,
@@ -20,6 +23,7 @@ static const float A[] = {
     51, 52, 51, 50, 52, 50, 52, 50,
     50, 51, 52, 52, 50, 51, 52, 51,
 };
+#endif
 
 /*
 static const float A[] = {
@@ -36,8 +40,8 @@ static const float A[] = {
 static gsl_matrix_float* matrixU;
 
 void print_matrix(const gsl_matrix_float* m) {
-    for (int i = 0; i < m->size1; i++) {
-        for (int j = 0; j < m->size2; j++) {
+    for (unsigned int i = 0; i < m->size1; i++) {
+        for (unsigned int j = 0; j < m->size2; j++) {
             printf("%.3f\t", gsl_matrix_float_get(m, i, j));
         }
         printf("\n");
@@ -68,8 +72,18 @@ void compute(const gsl_matrix_float* im, gsl_matrix_float* om) {
     gsl_matrix_float* matrixC = gsl_matrix_float_alloc(8, 8);
     gsl_blas_sgemm(CblasNoTrans, CblasNoTrans, 1., matrixU, im, 0., matrixC);
     print_matrix(matrixC);
-    // B = C * U', where B - is output matrix
+    // B = C * U', where B is output matrix
     gsl_blas_sgemm(CblasNoTrans, CblasTrans, 1., matrixC, matrixU, 0., om);
+    gsl_matrix_float_free(matrixC);
+}
+
+void inv_compute(const gsl_matrix_float* im, gsl_matrix_float* om) {
+    // C = U' * B, where B is input matrix
+    gsl_matrix_float* matrixC = gsl_matrix_float_alloc(8, 8);
+    gsl_blas_sgemm(CblasTrans, CblasNoTrans, 1., matrixU, im, 0., matrixC);
+    print_matrix(matrixC);
+    // A = C * U, where B is output matrix
+    gsl_blas_sgemm(CblasNoTrans, CblasNoTrans, 1., matrixC, matrixU, 0., om);
     gsl_matrix_float_free(matrixC);
 }
 
@@ -80,21 +94,36 @@ int main (int argc, char *argv[]) {
     create_dct();
 
     // Create input matrix A
+#ifdef CONSTA
     _gsl_matrix_float_const_view viewA = gsl_matrix_float_const_view_array(A, 8, 8);
     gsl_matrix_float* matrixA = &viewA.matrix;
-    //gsl_matrix_float* matrixA = gsl_matrix_float_alloc(8, 8);
-    //gsl_matrix_float_set_all(matrixA, 100);
+#else
+    gsl_matrix_float* matrixA = gsl_matrix_float_alloc(8, 8);
+    gsl_matrix_float_set_all(matrixA, 100);
+#endif
+    printf("matrix A\n");
+    print_matrix(matrixA);
 
     // Create output matrix B
     gsl_matrix_float* matrixB = gsl_matrix_float_alloc(8, 8);
 
     // B = U * A * U'
     compute(matrixA, matrixB);
+    printf("matrix B = U * A * U'\n");
     print_matrix(matrixB);
+
+    // Create output matrix A, restored
+    gsl_matrix_float* matrixAR = gsl_matrix_float_alloc(8, 8);
+    inv_compute(matrixB, matrixAR);
+    printf("matrix A = U' * B * U\n");
+    print_matrix(matrixAR);
 
     destroy_dct();
 
-    //gsl_matrix_float_free(matrixA);
+#ifndef CONSTA
+    gsl_matrix_float_free(matrixA);
+#endif
+    gsl_matrix_float_free(matrixAR);
     gsl_matrix_float_free(matrixB);
 
     return 0;
