@@ -1,2 +1,4 @@
-gcc dct.cpp -lm -lgsl -lgslcblas -o dct
 sudo apt-get install libgsl0-dev
+sudo apt-get install libjpeg-dev
+gcc dct.cpp -lm -lgsl -lgslcblas -o dct
+gcc huffman_libjpeg.cpp -ljpeg -o huffman
